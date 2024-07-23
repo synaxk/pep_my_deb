@@ -173,7 +173,7 @@ install_standard_tools(){
 
 install_i3wm(){
     log "info" "Installing i3wm and tools for customization.."
-    apt -y install i3 alacritty flameshot picom nitrogen polybar rofi pulseaudio imagemagick \
+    apt -y install i3 alacritty flameshot picom feh polybar rofi pulseaudio imagemagick \
         || log_err
 
     log "info" "Add symlink for imagemagick"
@@ -199,16 +199,16 @@ install_i3wm(){
 
     log "info" "Install config files"
     #TODO: setup git ssh_key or include dotfiles in pimp py debian repo
-    [ -d $WORKDIR/dotfiles ] && [ "$(ls -A $WORKDIR/dotfiles)" ] && log "info" "Dotfiles \
-        directory already exists" || git clone git@github.com:synaxk/dotfiles.git \
-        $WORKDIR/dotfiles || log_err
-    cp -r $WORKDIR/dotfiles/.* $WORKDIR/
+    #[ -d $WORKDIR/dotfiles ] && [ "$(ls -A $WORKDIR/dotfiles)" ] && log "info" "Dotfiles \
+    #    directory already exists" || git clone git@github.com:synaxk/dotfiles.git \
+    #    $WORKDIR/dotfiles || log_err
+    cp -r $WORKDIR/pimp_my_debian/dotfiles/.* $WORKDIR/
 
     log "info" "Configure wallpaper and lockscreen"
     # nitrogen command produces an error -> maybe replace nitrogen with betterlockscreen
     #nitrogen --set-zoom-fill $WORKDIR/.config/wallpaper/debian_grey_swirl.png
-
-    betterlockscreen -u .config/wallpaper/debian_grey_swirl.png || log_errs
+    feh --bg-fill $WORKDIR/.config/wallpaper/debian_grey_swirl.png || log_err
+    betterlockscreen -u $WORKDIR/.config/wallpaper/debian_grey_swirl.png || log_err
 }
 
 install_john(){
