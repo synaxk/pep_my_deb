@@ -198,14 +198,15 @@ install_i3wm(){
         -O - -q | bash -s system latest true || log_err
 
     log "info" "Install config files"
-    #TODO: setup git ssh_key
+    #TODO: setup git ssh_key or include dotfiles in pimp py debian repo
     [ -d $WORKDIR/dotfiles ] && [ "$(ls -A $WORKDIR/dotfiles)" ] && log "info" "Dotfiles \
         directory already exists" || git clone git@github.com:synaxk/dotfiles.git \
         $WORKDIR/dotfiles || log_err
     cp -r $WORKDIR/dotfiles/.* $WORKDIR/
 
     log "info" "Configure wallpaper and lockscreen"
-    nitrogen --set-zoom-fill $WORKDIR/.config/wallpaper/debian_grey_swirl.png
+    # nitrogen command produces an error -> maybe replace nitrogen with betterlockscreen
+    #nitrogen --set-zoom-fill $WORKDIR/.config/wallpaper/debian_grey_swirl.png
 
     betterlockscreen -u .config/wallpaper/debian_grey_swirl.png || log_errs
 }
@@ -225,21 +226,14 @@ install_john(){
     make bash-completion && make zsh-completion || log_err
 }
 
-install_impacket(){
-    log "info" "Install Impacket scripts"
-    python3 -m pipx install impacket
-    pip3 install pycryptodome
-}
-
 install_pentesting_toolkit(){
     lgo "info" "Install pentesting toolkit"
     log "info" "Install apt packages"
-    apt -y install wireshark tshark nmap pyhon3-ldapdomaindump gobuster ffuf dnsrecon \
-        hashcat wapiti sqlmap ruby ruby-dev freerdp2-x11 smbclient
+    apt -y install wireshark tshark nmap python3-ldapdomaindump gobuster ffuf dnsrecon \
+        hashcat wapiti sqlmap ruby ruby-dev freerdp2-x11 smbclient python3-pycryptodome
 
     log "info" "Install Impacket scripts"
-    python3 -m pipx install impacket
-    pip3 install pycryptodome
+    sudo -u $SUDO_USER python3 -m pipx install impacket
 
     install_john
 
@@ -254,7 +248,7 @@ install_pentesting_toolkit(){
     #
     #certipy https://github.com/ly4k/Certipy/releases/tag/4.8.2
 
-    pipx install certipy
+    sudo -u $SUDO_USER pipx install certipy
     #
     #zaproxy
     #
@@ -262,19 +256,18 @@ install_pentesting_toolkit(){
     [ -d /opt/metasploit ] && [ "$(ls -A /opt/metasploit)" ] || mkdir /opt/metasploit
     apt update && apt -y install gpgv2 autoconf bison build-essential postgresql libaprutil1\
         libgmp3-dev libpcap-dev openssl libpq-dev libreadline6-dev libsqlite3-dev libssl-dev\
-        locate libsvn1 libtool libxml2 libxml2-dev libxslt-dev wget libyaml-dev ncurses-dev
+        locate libsvn1 libtool libxml2 libxml2-dev libxslt-dev wget libyaml-dev ncurses-dev \
         postgresql-contrib xsel zlib1g zlib1g-dev curl
 
-    curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/\
-        metasploit-framework-wrappers/msfupdate.erb > /opt/metasploit/msfinstall || log_err
-    chmod +x /opt/metasploit/msfinstall && /opt/metasploit/msfinstsall
+    curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > /opt/metasploit/msfinstall || log_err
+    chmod +x /opt/metasploit/msfinstall && /opt/metasploit/msfinstsall && rm -rf /opt/metasploit
 
     # mitm6
-    pipx install mitm6
+    sudo -u $SUDO_USER pipx install mitm6
 
     # netexec
-    pipx ensurepath
-    pipx install git+https://github.com/Pennyw0rth/NetExec
+    sudo -u $SUDO_USER pipx ensurepath
+    sudo -u $SUDO_USER pipx install git+https://github.com/Pennyw0rth/NetExec
 
     # burpsuite
     # nessus
@@ -288,7 +281,6 @@ install_pentesting_toolkit(){
     sudo wget -O /opt/kerbrute/kerbrute_linux_amd64 https://github.com/ropnop/kerbrute\
     /releases/download/v1.0.3/kerbrute_linux_amd64 || sudo chmod +x \
     /opt/kerbrute/kerbrute_linux_amd64 && echo "already installed"k
-
 
 }
 
