@@ -1,6 +1,6 @@
 # Pimp my Debian
 Script to automate the installation and customization of various tools on my debian 12.6 stable installation.
-```shell
+```
 
 ________                                       ___       ___
 `########`  ,#.                                `##.     .##'
