@@ -106,9 +106,11 @@ log_err(){
 # install packages
 install_packages(){
     log "info" "Install core packages"
+    apt update
     apt -y install git python3-pip pipx zsh openvpn curl ntpdate gdb zip unzip \
         p7zip-full tor proxychains4 hexer
 }
+
 
 # install firefox
 install_firefox() {
@@ -139,6 +141,7 @@ install_firefox() {
     log "info" "Finished firefox setup."
 }
 
+
 # install vim
 install_vim(){
     log "info" "Clone vim repository..."
@@ -147,8 +150,8 @@ install_vim(){
     git clone https://github.com/vim/vim /opt/vim || log_err
 
     log "info" "Prepare the system..."
-    # dont check for error (Error when apt can't locate vim)
-    sudo apt remove --purge vi vim vim-runtime vim-gnome vim-tiny vim-gui-common
+    sudo apt remove --purge vim vim-runtime vim-gnome vim-tiny vim-common vim-gui-common ||\
+       log_err
 
     sudo apt -y install build-essential cmake python3-dev libncurses-dev || log_err
 
@@ -212,7 +215,6 @@ install_i3wm(){
 }
 
 install_john(){
-    log "info" "Install JohnTheRipper.."
     log "info" "Install prerequisites.."
     apt -y install libssl-dev || logerr
 
@@ -226,61 +228,142 @@ install_john(){
     make bash-completion && make zsh-completion || log_err
 }
 
-install_pentesting_toolkit(){
-    lgo "info" "Install pentesting toolkit"
-    log "info" "Install apt packages"
-    apt -y install wireshark tshark nmap python3-ldapdomaindump gobuster ffuf dnsrecon \
-        hashcat wapiti sqlmap ruby ruby-dev freerdp2-x11 smbclient python3-pycryptodome
+install_metasploit() {
+    [ -d /opt/metasploit-framework ] && [ "$(ls -A /opt/metasploit-framework)" ] &&
+        log "info" "Metasploit is already installed" && return 0
 
-    log "info" "Install Impacket scripts"
-    sudo -u $SUDO_USER python3 -m pipx install impacket
-
-    install_john
-
-#TODO: enum4linux
-    #
-    # searchsploit/exploitdb
-    #
-    # responder https://github.com/lgandx/Responder.git
-    #
-    # evil-winrm
-    # gem
-    #
-    #certipy https://github.com/ly4k/Certipy/releases/tag/4.8.2
-
-    sudo -u $SUDO_USER pipx install certipy
-    #
-    #zaproxy
-    #
-    #metasploit-framework
-    [ -d /opt/metasploit ] && [ "$(ls -A /opt/metasploit)" ] || mkdir /opt/metasploit
+    log "info" "Install prerequisites"
     apt update && apt -y install gpgv2 autoconf bison build-essential postgresql libaprutil1\
         libgmp3-dev libpcap-dev openssl libpq-dev libreadline6-dev libsqlite3-dev libssl-dev\
         locate libsvn1 libtool libxml2 libxml2-dev libxslt-dev wget libyaml-dev ncurses-dev \
         postgresql-contrib xsel zlib1g zlib1g-dev curl
 
-    curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > /opt/metasploit/msfinstall || log_err
-    chmod +x /opt/metasploit/msfinstall && /opt/metasploit/msfinstsall && rm -rf /opt/metasploit
+    DOWNLOAD_URL="https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb"
+    INSTALLER="/opt/tmp/msfinstall"
 
+    [ ! -d /opt/tmp ] && mkdir /opt/tmp
+    wget -O "$INSTALLET" "$DOWNLOAD_URL" || log_err
+    chmod +x "$INSTALLER" && $INSTALLER && rm "$INSTALLER" || log_err
+}
+
+install_kerbrute(){
+    [ -d /opt/kerbrute ] && [ "$(ls -A /opt/kerbrute)" ] && log "ino" \
+        "Kerbrute is already installed" && return 0
+
+    TARGET_DIR="/opt/kerbrute"
+    BINARY_PATH="$TARGET_DIR/kerbrute_linux_amd64"
+    DOWNLO [ -d /opt/responder ] && [ "$(ls -A /opt/responder)" ] && log "info"\
+        "Responder is already installed" && return 0
+AD_URL="https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_linux_amd64"
+
+    [ ! -d "$TARGET_DIR" ] && sudo mkdir -p "$TARGET_DIR" && sudo wget -O "$BINARY_PATH" \
+        "$DOWNLOAD_URL" && sudo chmod +x "$BINARY_PATH" || [ -z "$(ls -A "$TARGET_DIR")" ] &&\
+        sudo wget -O "$BINARY_PATH" "$DOWNLOAD_URL" && sudo chmod +x "$BINARY_PATH" || log_err
+}
+
+install_burpsuite() {
+    TARGET_DIR="/opt/BurpSuiteCommunity"
+    [ -d "$TARGET_DIR" ] && log "info" "Burpsuite is already installed" && return 0
+
+    INSTALLER="/opt/tmp/burpsuite_community_linux_v2024_5_5.sh"
+    DOWNLOAD_URL="https://portswigger-cdn.net/burp/releases/download?product=community&version=2024.5.5&type=Linux"
+    [ ! -d "/opt/tmp" ] && sudo mkdir /opt/tmp
+    [ ! -d "$TARGET_DIR" ] && sudo wget -O "$INSTALLER" "$DOWNLOAD_URL" && \
+        chmod +x "$INSTALLER" && $INSTALLER -q || log_err
+}
+
+install_seclists(){
+    $TARGET_DIR
+    [ -d "$TARGET_DIR" ] && [ "$(ls -A $TARGET_DIR)" ] && \
+        log "info" "Seclists is already installed" && return 0
+
+    git clone https://github.com/danielmiessler/SecLists.git /opt/seclists || log_err
+}
+
+install_wireshark(){
+    [ -f /usr/bin/wireshark ] && log "info" "Wireshark is already installed" && return 0
+    DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark
+    usermod -aG wireshark $SUDO_USER
+    chown -R $SUDO_USER /usr/bin/dumpcap
+}
+
+install_exploitdb(){
+    [ -d /opt/exploitdb ] && [ "$(ls -A /opt/exploitdb)" ] && log "info"\
+        "Exploitdb is already installed" && return 0
+
+    git clone https://gitlab.com/exploit-database/exploitdb.git /opt/exploitdb || log_err
+    ln -sf /opt/exploitdb/searchsploit /usr/local/bin/searchsploit || log_err
+}
+
+install_responder(){
+    [ -d /opt/responder ] && [ "$(ls -A /opt/responder)" ] && log "info"\
+        "Responder is already installed" && return 0
+
+    git clone https://github.com/lgandx/Responder.git /opt/responder || log_err
+}
+
+install_nessus(){
+    [ systemctl status nessusd.service ] && log "info" "Nessus is already installed" && return 0
+    INSTALLER="/opt/tmp/Nessus-10.7.5-debian10_amd64.deb"
+    wget - O "$INSTALLER" "https://www.tenable.com/downloads/api/v2/pages/nessus/files/Nessus-10.7.5-debian10_amd64.deb" && dpkg -i $INSTALLER && systemctl start nessusd.service || log_err
+}
+
+install_zaproxy(){
+    [ -d /opt/zaproxy ] && [ "$(ls -A /opt/zaproxy)" ] && log "info"\
+        "ZAProxy is already installed" && return 0
+    [ ! -d  /opt/tmp ] && mkdir /opt/tmp
+    INSTALLER="/opt/tmp/ZAP_2_15_0_unix.sh"
+    wget -O "$INSTALLER" "https://github.com/zaproxy/zaproxy/releases/download/v2.15.0/ZAP_2_15_0_unix.sh" || log_err
+    chmod +x "$INSTALLER" && $INSTALLER -q || log_err
+}
+
+install_pentesting_toolkit(){
+    lgo "info" "Install pentesting toolkit"
+    log "info" "Install apt packages"
+    apt -y install tshark nmap python3-ldapdomaindump gobuster ffuf dnsrecon \
+        hashcat wapiti sqlmap ruby ruby-dev freerdp2-x11 smbclient python3-pycryptodome
+
+    log "info" "Install python tools impacket, certipy, mitm6, netexec"
+    sudo -u $SUDO_USER pipx install impacket
+    # certipy
+    log "info" install
+    sudo -u $SUDO_USER pipx install certipy
     # mitm6
     sudo -u $SUDO_USER pipx install mitm6
-
     # netexec
     sudo -u $SUDO_USER pipx ensurepath
     sudo -u $SUDO_USER pipx install git+https://github.com/Pennyw0rth/NetExec
 
-    # burpsuite
-    # nessus
-    # seclists
-    log "info" "Install Seclists repository"
-    [ -d /opt/seclists ] && [ "$(ls -A /opt/seclists)" ] || (git clone \
-        https://github.com/danielmiessler/SecLists.git /opt/seclists || log_err)
+    log "info" "Install JohnTheRipper.."
+    install_john
 
-    #kerbrute
-    [ -d /opt/kerbrute ] && [ "$(ls -A /opt/kerbrute)" ] || sudo mkdir /opt/kerbrute || \
-    sudo wget -O /opt/kerbrute/kerbrute_linux_amd64 https://github.com/ropnop/kerbrute\
-    /releases/download/v1.0.3/kerbrute_linux_amd64 || sudo chmod +x \
-    /opt/kerbrute/kerbrute_linux_amd64 && echo "already installed"k
+    log "info" "Install Seclists repository.."
+    instsall_seclists
+
+    log "info" "Install Kerbrute.."
+    install_kerbrute
+
+    log "info" "Install Burpsuite community edition.."
+    install_burpsuite
+
+    log "info" "Install Evil-Winrm.."
+    gem install evil-winrm
+
+    log "info" "Install Wireshark.."
+    install_wireshark
+
+    log "info" "Install Exploitdb.."
+    install_exploitdb
+
+    log "info" "Install Responder.."
+    install_responder
+
+    log "info" "Install Nessus.."
+    install_nessus
+
+    log "info" "Install ZAProxy.."
+    install_zaproxy
+#TODO:
 
 }
 
@@ -326,13 +409,3 @@ echo $WORKDIR
 print_header
 parse_opts "$@"
 
-
-#install_packages
-
-#install_firefox
-
-#install_vim
-
-#install_i3wm
-
-#install_john
