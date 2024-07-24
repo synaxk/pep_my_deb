@@ -115,7 +115,7 @@ install_packages(){
 # install firefox
 install_firefox() {
     log "info" "Install firefox..."
-    [ "$(firefox --version)" = "Mozilla Firefox 128.0.2" ] && log "info" \
+    [ "$(sudo -u $SUDO_USER firefox --version)" = "Mozilla Firefox 128.0.2" ] && log "info" \
         "Correct version already installed." && return 0
     log "info" "Remove firefox esr"
     sudo apt -y remove firefox-esr && sudo apt -y autoremove || log_err
@@ -146,9 +146,9 @@ install_firefox() {
 
 # install vim
 install_vim(){
-    log "info" "Clone vim repository..."
     [ -d /opt/vim ] && [ "$(ls -A /opt/vim)" ] && log "info" "Vim is already installed." \
         && return 1
+    log "info" "Clone vim repository..."
     git clone https://github.com/vim/vim /opt/vim || log_err
 
     log "info" "Prepare the system..."
