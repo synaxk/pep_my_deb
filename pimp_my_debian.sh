@@ -303,7 +303,8 @@ install_responder(){
 }
 
 install_nessus(){
-    [ systemctl status nessusd.service ] && log "info" "Nessus is already installed" && return 0
+    [ "$(systemctl status nessusd.service)" ] && log "info" "Nessus is already installed" \
+        && return 0
     INSTALLER="/opt/tmp/Nessus-10.7.5-debian10_amd64.deb"
     wget -O "$INSTALLER" "https://www.tenable.com/downloads/api/v2/pages/nessus/files/Nessus-10.7.5-debian10_amd64.deb" && dpkg -i $INSTALLER && systemctl start nessusd.service || log_err
 }
