@@ -115,6 +115,8 @@ install_packages(){
 # install firefox
 install_firefox() {
     log "info" "Install firefox..."
+    [ "$(firefox --version)" = "Mozilla Firefox 128.0.2" ] && log "info" \
+        "Correct version already installed." && return 0
     log "info" "Remove firefox esr"
     sudo apt -y remove firefox-esr && sudo apt -y autoremove || log_err
     log "info" "Import the Mozilla APT repository signing key:"
@@ -145,12 +147,12 @@ install_firefox() {
 # install vim
 install_vim(){
     log "info" "Clone vim repository..."
-    [ -d /opt/vim ] && [ "$(ls -A /opt/vim)" ] && log "warning" "Vim directory already exits." \
+    [ -d /opt/vim ] && [ "$(ls -A /opt/vim)" ] && log "info" "Vim is already installed." \
         && return 1
     git clone https://github.com/vim/vim /opt/vim || log_err
 
     log "info" "Prepare the system..."
-    sudo apt remove --purge vim vim-runtime vim-gnome vim-tiny vim-common vim-gui-common ||\
+    sudo apt -y remove --purge vim vim-runtime vim-gnome vim-tiny vim-common vim-gui-common ||\
        log_err
 
     sudo apt -y install build-essential cmake python3-dev libncurses-dev || log_err
@@ -219,7 +221,7 @@ install_john(){
     apt -y install libssl-dev || logerr
 
     log "info" "Clone the repository and compile.."
-    [ -d /opt/john ] && [ $(ls -A /opt/john) ] && log "info" "John directory already exists." \
+    [ -d /opt/john ] && [ "$(ls -A /opt/john)" ] && log "info" "John is already installed" \
         && return 1
     sudo git clone https://github.com/openwall/john.git /opt/john || log_err
     cd /opt/john/src && ./configure && make || log_err
@@ -247,14 +249,12 @@ install_metasploit() {
 }
 
 install_kerbrute(){
-    [ -d /opt/kerbrute ] && [ "$(ls -A /opt/kerbrute)" ] && log "ino" \
+    [ -d /opt/kerbrute ] && [ "$(ls -A /opt/kerbrute)" ] && log "info" \
         "Kerbrute is already installed" && return 0
 
     TARGET_DIR="/opt/kerbrute"
     BINARY_PATH="$TARGET_DIR/kerbrute_linux_amd64"
-    DOWNLO [ -d /opt/responder ] && [ "$(ls -A /opt/responder)" ] && log "info"\
-        "Responder is already installed" && return 0
-AD_URL="https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_linux_amd64"
+    DOWNLOAD_URL="https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_linux_amd64"
 
     [ ! -d "$TARGET_DIR" ] && sudo mkdir -p "$TARGET_DIR" && sudo wget -O "$BINARY_PATH" \
         "$DOWNLOAD_URL" && sudo chmod +x "$BINARY_PATH" || [ -z "$(ls -A "$TARGET_DIR")" ] &&\
@@ -273,7 +273,7 @@ install_burpsuite() {
 }
 
 install_seclists(){
-    $TARGET_DIR
+    TARGET_DIR="/opt/seclists"
     [ -d "$TARGET_DIR" ] && [ "$(ls -A $TARGET_DIR)" ] && \
         log "info" "Seclists is already installed" && return 0
 
@@ -305,7 +305,7 @@ install_responder(){
 install_nessus(){
     [ systemctl status nessusd.service ] && log "info" "Nessus is already installed" && return 0
     INSTALLER="/opt/tmp/Nessus-10.7.5-debian10_amd64.deb"
-    wget - O "$INSTALLER" "https://www.tenable.com/downloads/api/v2/pages/nessus/files/Nessus-10.7.5-debian10_amd64.deb" && dpkg -i $INSTALLER && systemctl start nessusd.service || log_err
+    wget -O "$INSTALLER" "https://www.tenable.com/downloads/api/v2/pages/nessus/files/Nessus-10.7.5-debian10_amd64.deb" && dpkg -i $INSTALLER && systemctl start nessusd.service || log_err
 }
 
 install_zaproxy(){
@@ -320,7 +320,7 @@ install_zaproxy(){
 install_pentesting_toolkit(){
     lgo "info" "Install pentesting toolkit"
     log "info" "Install apt packages"
-    apt -y install tshark nmap python3-ldapdomaindump gobuster ffuf dnsrecon \
+    apt -y install tshark nmap python3-ldapdomaindump gobuster ffuf dnsrecon default-jdk\
         hashcat wapiti sqlmap ruby ruby-dev freerdp2-x11 smbclient python3-pycryptodome
 
     log "info" "Install python tools impacket, certipy, mitm6, netexec"
@@ -338,7 +338,7 @@ install_pentesting_toolkit(){
     install_john
 
     log "info" "Install Seclists repository.."
-    instsall_seclists
+    install_seclists
 
     log "info" "Install Kerbrute.."
     install_kerbrute
