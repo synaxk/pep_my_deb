@@ -106,8 +106,8 @@ log_err(){
 # install packages
 install_packages(){
     log "info" "Install core packages"
-    apt update
-    apt -y install git python3-pip pipx zsh openvpn curl ntpdate gdb zip unzip \
+    apt-get update
+    apt-get -y install git python3-pip pipx zsh openvpn curl ntpdate gdb zip unzip \
         p7zip-full tor proxychains4 hexer docker.io docker-compose
 }
 
@@ -118,7 +118,7 @@ install_firefox() {
     [ "$(sudo -u $SUDO_USER firefox --version)" = "Mozilla Firefox 128.0.2" ] && log "info" \
         "Correct version already installed." && return 0
     log "info" "Remove firefox esr"
-    sudo apt -y remove firefox-esr && sudo apt -y autoremove || log_err
+    apt-get -y remove firefox-esr && apt-get -y autoremove || log_err
     log "info" "Import the Mozilla APT repository signing key:"
     wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null || log_err
     log "info" "check the key fingerprint..."
@@ -129,14 +129,14 @@ install_firefox() {
         || (log "error" "Fingerprint does not match! Abort.." && exit 1)
 
     log "info" "Add the Moilla APT repository to the APT sources list.."
-    echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | sudo tee -a /etc/apt/sources.list.d/mozilla.list > /dev/null || log_err
+    echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | tee -a /etc/apt/sources.list.d/mozilla.list > /dev/null || log_err
 
     log "info" "Configure APT to prioritize packages from the mozilla repository"
     echo '
     Package: *
     Pin: origin packages.mozilla.org
     Pin-Priority: 1000
-    ' | sudo tee /etc/apt/preferences.d/mozilla || log_err
+    ' | tee /etc/apt/preferences.d/mozilla || log_err
 
     log "info" "Update package list and install Firefox .deb package..."
     apt-get update && apt-get -y install firefox || log_err
@@ -152,10 +152,10 @@ install_vim(){
     git clone https://github.com/vim/vim /opt/vim || log_err
 
     log "info" "Prepare the system..."
-    sudo apt -y remove --purge vim vim-runtime vim-gnome vim-tiny vim-common vim-gui-common ||\
-       log_err
+    apt-get -y remove --purge vim vim-runtime vim-gnome vim-tiny vim-common \
+        vim-gui-common || log_err
 
-    sudo apt -y install build-essential cmake python3-dev libncurses-dev || log_err
+    apt-get -y install build-essential cmake python3-dev libncurses-dev || log_err
 
     cd /opt/vim
     log "info" "Compile and Install..."
@@ -177,17 +177,17 @@ install_standard_tools(){
 
 install_i3wm(){
     log "info" "Installing i3wm and tools for customization.."
-    apt -y install i3 alacritty flameshot picom feh polybar rofi pulseaudio imagemagick \
-        || log_err
+    apt-get -y install i3 alacritty kitty flameshot picom feh polybar rofi pulseaudio \
+        imagemagick fonts-jetbrains-mono || log_err
 
     log "info" "Add symlink for imagemagick"
     [ -f /usr/bin/magick ] || ln -s /usr/bin/convert /usr/bin/magick || log_err
 
     log "info" "Install dependencies for i3lock-color"
-    apt install -y autoconf gcc make pkg-config libpam0g-dev libcairo2-dev libfontconfig1-dev \
-        libxcb-composite0-dev libev-dev libx11-xcb-dev libxcb-xkb-dev libxcb-xinerama0-dev \
-        libxcb-randr0-dev libxcb-image0-dev libxcb-util0-dev libxcb-xrm-dev libxkbcommon-dev\
-        libxkbcommon-x11-dev libjpeg-dev || log_err
+    apt-get install -y autoconf gcc make pkg-config libpam0g-dev libcairo2-dev \
+        libfontconfig1-dev libxcb-composite0-dev libev-dev libx11-xcb-dev libxcb-xkb-dev \
+        libxcb-xinerama0-dev libxcb-randr0-dev libxcb-image0-dev libxcb-util0-dev libxcb-xrm-dev\
+        libxkbcommon-dev libxkbcommon-x11-dev libjpeg-dev || log_err
 
     log "info" "Install i3lock-color"
     [ -d /opt/i3lock-color ] && [ "$(ls -A /opt/i3lock-color)" ] && log "info" "i3lock-color \
@@ -207,7 +207,12 @@ install_i3wm(){
     #[ -d $WORKDIR/dotfiles ] && [ "$(ls -A $WORKDIR/dotfiles)" ] && log "info" "Dotfiles \
     #    directory already exists" || git clone git@github.com:synaxk/dotfiles.git \
     #    $WORKDIR/dotfiles || log_err
-    cp -r $WORKDIR/pimp_my_debian/dotfiles/.* $WORKDIR/
+    if [ ! -d "$WORKDIR/dotfiles" ] || [ -z "$(ls -A "$WORKDIR/dotfiles")" ]; then
+        log "warning" "No config files found."
+    else
+        log "info" "Copy config files"
+        sudo -u $SUDO_USER cp -r $WORKDIR/pimp_my_debian/dotfiles/.* $WORKDIR/
+    fi
 
     log "info" "Configure wallpaper and lockscreen"
     # nitrogen command produces an error -> maybe replace nitrogen with betterlockscreen
@@ -218,12 +223,12 @@ install_i3wm(){
 
 install_john(){
     log "info" "Install prerequisites.."
-    apt -y install libssl-dev || logerr
+    apt-get -y install libssl-dev || logerr
 
     log "info" "Clone the repository and compile.."
     [ -d /opt/john ] && [ "$(ls -A /opt/john)" ] && log "info" "John is already installed" \
         && return 1
-    sudo git clone https://github.com/openwall/john.git /opt/john || log_err
+    git clone https://github.com/openwall/john.git /opt/john || log_err
     cd /opt/john/src && ./configure && make || log_err
 
     log "info" "Activate autocompletion for bash and zsh.."
@@ -235,10 +240,10 @@ install_metasploit() {
         log "info" "Metasploit is already installed" && return 0
 
     log "info" "Install prerequisites"
-    apt update && apt -y install gpgv2 autoconf bison build-essential postgresql libaprutil1\
-        libgmp3-dev libpcap-dev openssl libpq-dev libreadline6-dev libsqlite3-dev libssl-dev\
-        locate libsvn1 libtool libxml2 libxml2-dev libxslt-dev wget libyaml-dev ncurses-dev \
-        postgresql-contrib xsel zlib1g zlib1g-dev curl
+    apt-get update && apt-get -y install gpgv2 autoconf bison build-essential postgresql \
+        libaprutil1 libgmp3-dev libpcap-dev openssl libpq-dev libreadline6-dev libsqlite3-dev \
+        libssl-dev locate libsvn1 libtool libxml2 libxml2-dev libxslt-dev wget libyaml-dev \
+        ncurses-dev postgresql-contrib xsel zlib1g zlib1g-dev curl
 
     DOWNLOAD_URL="https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb"
     INSTALLER="/opt/tmp/msfinstall"
@@ -255,10 +260,13 @@ install_kerbrute(){
     TARGET_DIR="/opt/kerbrute"
     BINARY_PATH="$TARGET_DIR/kerbrute_linux_amd64"
     DOWNLOAD_URL="https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_linux_amd64"
-
-    [ ! -d "$TARGET_DIR" ] && sudo mkdir -p "$TARGET_DIR" && sudo wget -O "$BINARY_PATH" \
-        "$DOWNLOAD_URL" && sudo chmod +x "$BINARY_PATH" || [ -z "$(ls -A "$TARGET_DIR")" ] &&\
-        sudo wget -O "$BINARY_PATH" "$DOWNLOAD_URL" && sudo chmod +x "$BINARY_PATH" || log_err
+    if [ ! -d "$TARGET_DIR" ] || [ -z "$(ls -A "$TARGET_DIR")" ]; then
+        [ ! -d "$TARGET_DIR" ] && mkdir -p "$TARGET_DIR" || log_err
+        wget -O "$BINARY_PATH" "$DOWNLOAD_URL" && chmod +x "$BINARY_PATH" || log_err
+    fi
+    #[ ! -d "$TARGET_DIR" ] && mkdir -p "$TARGET_DIR" && wget -O "$BINARY_PATH" \
+    #    "$DOWNLOAD_URL" && sudo chmod +x "$BINARY_PATH" || [ -z "$(ls -A "$TARGET_DIR")" ] &&\
+    #    sudo wget -O "$BINARY_PATH" "$DOWNLOAD_URL" && sudo chmod +x "$BINARY_PATH" || log_err
 }
 
 install_burpsuite() {
@@ -321,19 +329,23 @@ install_zaproxy(){
 install_pentesting_toolkit(){
     lgo "info" "Install pentesting toolkit"
     log "info" "Install apt packages"
-    apt -y install tshark nmap python3-ldapdomaindump gobuster ffuf dnsrecon default-jdk\
-        hashcat wapiti sqlmap ruby ruby-dev freerdp2-x11 smbclient python3-pycryptodome
+    apt-get -y install tshark nmap python3-ldapdomaindump gobuster ffuf dnsrecon default-jdk\
+        hashcat wapiti sqlmap ruby ruby-dev freerdp2-x11 smbclient python3-pycryptodome \
+        python3-impacket
 
     log "info" "Install python tools impacket, certipy, mitm6, netexec"
+    # impacket
     sudo -u $SUDO_USER pipx install impacket
-    # certipy
+    # certipy-ad
     log "info" install
-    sudo -u $SUDO_USER pipx install certipy
+    sudo -u $SUDO_USER pipx install certipy-ad
     # mitm6
     sudo -u $SUDO_USER pipx install mitm6
     # netexec
+    sudo -u $SUDO_USER pipx install git+https://github.com/Pennyw0rth/NetExec.git
+    # enum4linux-ng
+    sudo -u $SUDO_USER pipx install git+https://github.com/cddmp/enum4linux-ng.git
     sudo -u $SUDO_USER pipx ensurepath
-    sudo -u $SUDO_USER pipx install git+https://github.com/Pennyw0rth/NetExec
 
     log "info" "Install JohnTheRipper.."
     install_john
