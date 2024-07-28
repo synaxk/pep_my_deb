@@ -108,7 +108,7 @@ install_packages(){
     log "info" "Install core packages"
     apt update
     apt -y install git python3-pip pipx zsh openvpn curl ntpdate gdb zip unzip \
-        p7zip-full tor proxychains4 hexer
+        p7zip-full tor proxychains4 hexer docker.io docker-compose
 }
 
 
@@ -173,7 +173,6 @@ install_standard_tools(){
     install_packages
     install_firefox
     install_vim
-
 }
 
 install_i3wm(){
@@ -204,6 +203,7 @@ install_i3wm(){
 
     log "info" "Install config files"
     #TODO: setup git ssh_key or include dotfiles in pimp py debian repo
+    # !! File ownership!!
     #[ -d $WORKDIR/dotfiles ] && [ "$(ls -A $WORKDIR/dotfiles)" ] && log "info" "Dotfiles \
     #    directory already exists" || git clone git@github.com:synaxk/dotfiles.git \
     #    $WORKDIR/dotfiles || log_err
@@ -365,7 +365,8 @@ install_pentesting_toolkit(){
     log "info" "Install ZAProxy.."
     install_zaproxy
 #TODO:
-
+    # enum4linux-ng
+    # kerbrute fix
 }
 
 parse_opts() {
