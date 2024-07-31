@@ -109,10 +109,13 @@ install_packages(){
     apt-get update
     apt-get -y install git python3-pip pipx zsh openvpn curl ntpdate gdb zip unzip \
         p7zip-full tor proxychains4 hexer docker.io docker-compose
-}
+    log "info" "Install extensions for firefox esr..."
+    apt-get -y install webext-ublock-origin-firefox webext-foxyproxy
+    }
 
 
 # install firefox
+# switch back to the default installation of firefox esr
 install_firefox() {
     log "info" "Install firefox..."
     [ "$(sudo -u $SUDO_USER firefox --version)" = "Mozilla Firefox 128.0.2" ] && log "info" \
@@ -144,7 +147,7 @@ install_firefox() {
 }
 
 
-# install vim
+# manually compile and install vim to enable python modules for latex plugins
 install_vim(){
     [ -d /opt/vim ] && [ "$(ls -A /opt/vim)" ] && log "info" "Vim is already installed." \
         && return 1
@@ -165,13 +168,16 @@ install_vim(){
         --enable-cscope --enable-largefile || log_err
 
     make && make install || log_err
+    log "info" "Install dependecies for latex plugins..."
+    apt-get -y install texlive-full python3-pygments
     log "info" "Finished vim setup."
 }
 
 install_standard_tools(){
     log "info" "Install standard tools.."
     install_packages
-    install_firefox
+    # switch back to firefox esr and install extensions from apt repositories
+    #install_firefox
     install_vim
 }
 
