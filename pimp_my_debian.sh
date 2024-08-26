@@ -108,10 +108,13 @@ install_packages(){
     log "info" "Install core packages"
     apt-get update
     apt-get -y install git python3-pip pipx zsh openvpn curl ntpdate gdb zip unzip \
-        p7zip-full tor proxychains4 hexer docker.io docker-compose
+        ftp tree mlocate p7zip-full tor proxychains4 hexer docker.io docker-compose
+
+    #TODO: manual installation of docker for sysreptor
+
     log "info" "Install extensions for firefox esr..."
     apt-get -y install webext-ublock-origin-firefox webext-foxyproxy
-    }
+}
 
 
 # install firefox
@@ -218,13 +221,13 @@ install_i3wm(){
     else
         log "info" "Copy config files"
         sudo -u $SUDO_USER cp -r $WORKDIR/pimp_my_debian/dotfiles/.* $WORKDIR/
-    fi
 
-    log "info" "Configure wallpaper and lockscreen"
-    # nitrogen command produces an error -> maybe replace nitrogen with betterlockscreen
-    #nitrogen --set-zoom-fill $WORKDIR/.config/wallpaper/debian_grey_swirl.png
-    feh --bg-fill $WORKDIR/.config/wallpaper/debian_grey_swirl.png || log_err
-    betterlockscreen -u $WORKDIR/.config/wallpaper/debian_grey_swirl.png || log_err
+        log "info" "Configure wallpaper and lockscreen"
+        # nitrogen command produces an error -> maybe replace nitrogen with betterlockscreen
+        #nitrogen --set-zoom-fill $WORKDIR/.config/wallpaper/debian_grey_swirl.png
+        feh --bg-fill $WORKDIR/.config/wallpaper/debian_grey_swirl.png || log_err
+        betterlockscreen -u $WORKDIR/.config/wallpaper/debian_grey_swirl.png || log_err
+    fi
 }
 
 install_john(){
@@ -255,7 +258,7 @@ install_metasploit() {
     INSTALLER="/opt/tmp/msfinstall"
 
     [ ! -d /opt/tmp ] && mkdir /opt/tmp
-    wget -O "$INSTALLET" "$DOWNLOAD_URL" || log_err
+    wget -O "$INSTALLER" "$DOWNLOAD_URL" || log_err
     chmod +x "$INSTALLER" && $INSTALLER && rm "$INSTALLER" || log_err
 }
 
@@ -337,13 +340,12 @@ install_pentesting_toolkit(){
     log "info" "Install apt packages"
     apt-get -y install tshark nmap python3-ldapdomaindump gobuster ffuf dnsrecon default-jdk\
         hashcat wapiti sqlmap ruby ruby-dev freerdp2-x11 smbclient python3-pycryptodome \
-        python3-impacket
+        python3-impacket ldap-utils
 
     log "info" "Install python tools impacket, certipy, mitm6, netexec"
     # impacket
     sudo -u $SUDO_USER pipx install impacket
     # certipy-ad
-    log "info" install
     sudo -u $SUDO_USER pipx install certipy-ad
     # mitm6
     sudo -u $SUDO_USER pipx install mitm6
@@ -351,6 +353,10 @@ install_pentesting_toolkit(){
     sudo -u $SUDO_USER pipx install git+https://github.com/Pennyw0rth/NetExec.git
     # enum4linux-ng
     sudo -u $SUDO_USER pipx install git+https://github.com/cddmp/enum4linux-ng.git
+    # bloodhound-python
+    sudo -u $SUDO_USER pipx install git+https://github.com/dirkjanm/BloodHound.py.git@bloodhound-ce
+    # bbot
+    sudo -u $SUDO_USER pipx install bbot
     sudo -u $SUDO_USER pipx ensurepath
 
     log "info" "Install JohnTheRipper.."
@@ -382,9 +388,6 @@ install_pentesting_toolkit(){
 
     log "info" "Install ZAProxy.."
     install_zaproxy
-#TODO:
-    # enum4linux-ng
-    # kerbrute fix
 }
 
 parse_opts() {
